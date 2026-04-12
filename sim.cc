@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random> 
 
 #include "G4RunManager.hh"
 #include "G4MTRunManager.hh"
@@ -11,8 +12,19 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
 
+#include "FTFP_BERT_HP.hh"
+
 
 int main(int argc, char**argv){
+
+    //毎回異なる結果を発生させるために乱数でシード値を取得
+    std::random_device seed_gen;
+    auto seed = seed_gen();
+    G4Random::setTheEngine(new CLHEP::MTwistEngine);
+    //シード値を出力しておくことで、後で同じ結果を再現することも可能
+    G4cout << "Random Seed is " << seed << G4endl;
+    G4Random::setTheSeed(seed);
+
 
     G4UIExecutive *ui = new G4UIExecutive(argc, argv);
 
@@ -22,8 +34,9 @@ int main(int argc, char**argv){
         G4RunManager *runManager = new G4RunManager;
     #endif
 
-    //PhysicsList 
-    runManager->SetUserInitialization(new PhysicsList());
+    //PhysicsList  (PhysicsList.ccは使用しない)
+    G4VModularPhysicsList *physicsList = new FTFP_BERT_HP();
+    runManager->SetUserInitialization(physicsList);
     
     //DetectorConstruction
     runManager->SetUserInitialization(new DetectorConstruction());

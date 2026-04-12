@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-project(basic)
+project(Li_glass)
 
 find_package(Geant4 REQUIRED ui_all vis_all)
 

@@ -2,7 +2,7 @@
 #define PHYSICSLIST_HH
 
 #include "G4VModularPhysicsList.hh"
-#include "G4EmStandardPhysics.hh"
+#include "FTFP_BERT_HP.hh"
 
 class PhysicsList : public G4VModularPhysicsList
 {

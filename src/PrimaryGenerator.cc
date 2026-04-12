@@ -14,7 +14,7 @@ PrimaryGenerator::PrimaryGenerator()
 
     // Particle Type
     G4ParticleTable *particleTable = G4ParticleTable::GetParticleTable();
-    G4ParticleDefinition *particle = particleTable->FindParticle("gamma");
+    G4ParticleDefinition *particle = particleTable->FindParticle("neutron");
 
     fParticleGun -> SetParticlePosition(pos);
     fParticleGun -> SetParticleEnergy(1. * MeV);
@@ -38,9 +38,9 @@ void PrimaryGenerator::GeneratePrimaries(G4Event *anEvent)
     fParticleGun->SetParticleMomentumDirection(randomMom);
 
     /*　確認用
-    G4cout << "x: " << randomMom[0] << " y: " << randomMom[1] << " z: " << randomMom[2] << G4endl;;
+    G4cout << "x: " << randomMom[0] << " y: " << randomMom[1] << " z: " << randomMom[2] << G4endl;
     */
-__LAHF_SAHF__
+
     // Create vertex
     fParticleGun->GeneratePrimaryVertex(anEvent);
 }

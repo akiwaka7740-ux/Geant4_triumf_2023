@@ -2,8 +2,7 @@
 
 PhysicsList::PhysicsList()
 {
-    //EM physics
-    RegisterPhysics(new G4EmStandardPhysics());
+  
 
    
 }
