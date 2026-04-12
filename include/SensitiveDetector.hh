@@ -20,7 +20,7 @@ private:
     virtual void Initialize(G4HCofThisEvent*) override;
     virtual void EndOfEvent(G4HCofThisEvent *) override;
 
-    G4double fTotalEnergyDeposited;
+    G4double fHitTime;
 };
 
 #endif

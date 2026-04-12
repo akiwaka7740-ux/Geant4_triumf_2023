@@ -4,15 +4,8 @@ RunAction::RunAction()
 {
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
 
-    analysisManager->CreateH1("Edep", "Energy deposit", 100, 0., 1.1 * MeV);
-
-    analysisManager->CreateNtuple("Photons", "Photons");
-    analysisManager->CreateNtupleIColumn("iEvent");
-    analysisManager->CreateNtupleDColumn("fX");
-    analysisManager->CreateNtupleDColumn("fY");
-    analysisManager->CreateNtupleDColumn("fZ");
-    analysisManager->CreateNtupleDColumn("fGlobalTime");
-    analysisManager->CreateNtupleDColumn("fWlen");
+    analysisManager->CreateNtuple("neutron", "neutron");
+    analysisManager->CreateNtupleDColumn("fHitTime");
     analysisManager->FinishNtuple(0);
 }
 

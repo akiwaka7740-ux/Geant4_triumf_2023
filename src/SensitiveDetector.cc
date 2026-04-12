@@ -2,7 +2,8 @@
 
 SensitiveDetector::SensitiveDetector(G4String name) : G4VSensitiveDetector(name)
 {
-    fTotalEnergyDeposited = 0.;
+    //物理的に意味のない時刻で初期化
+   fHitTime = -1.0 * ns ;
 }
 
 SensitiveDetector::~SensitiveDetector()
@@ -11,7 +12,7 @@ SensitiveDetector::~SensitiveDetector()
 
 void SensitiveDetector::Initialize(G4HCofThisEvent *)
 {
-    fTotalEnergyDeposited = 0.;
+   fHitTime = -1.0 * ns ;
 }
 
 
@@ -19,44 +20,55 @@ void SensitiveDetector::EndOfEvent(G4HCofThisEvent *)
 {
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
 
-    //合計エネルギーのみイベントが終わるごとに書き込み
-    analysisManager->FillH1(0, fTotalEnergyDeposited);
+    analysisManager->FillNtupleDColumn(0, 0, fHitTime);
 
-    G4cout << "Deposited energy: " << fTotalEnergyDeposited << G4endl;
 }
 
 
 G4bool SensitiveDetector::ProcessHits(G4Step *aStep, G4TouchableHistory *ROhist)
 {
-    //基本的な情報は検出器内でstepが踏まれるたびに記録される
-    G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+   //1.粒子名の取得と判定
+    G4String particleName = aStep->GetTrack()->GetDefinition()->GetParticleName();
 
-    G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-
-    G4StepPoint *preStepPoint = aStep->GetPreStepPoint();
-
-    G4double fGlobalTime = preStepPoint->GetGlobalTime();
-    G4ThreeVector posPhoton = preStepPoint->GetPosition();
-    G4ThreeVector momPhoton = preStepPoint->GetMomentum();
-
-    G4double momPhotonMag = momPhoton.mag();
-
-    G4double fWlen = (1.239841939 * eV / momPhotonMag) * 1E+03;
-
-    analysisManager->FillNtupleIColumn(0, 0, eventID);
-    analysisManager->FillNtupleDColumn(0, 1, posPhoton[0]);
-    analysisManager->FillNtupleDColumn(0, 2, posPhoton[1]);
-    analysisManager->FillNtupleDColumn(0, 3, posPhoton[2]);
-    analysisManager->FillNtupleDColumn(0, 4, fGlobalTime);
-    analysisManager->FillNtupleDColumn(0, 5, fWlen);
-    analysisManager->AddNtupleRow(0);
-
-    G4double energyDeposited = aStep->GetTotalEnergyDeposit();
-
-    if (energyDeposited > 0)
-    {
-        fTotalEnergyDeposited += energyDeposited;
+    if (particleName != "neutron") {
+        return false; // 中性子以外（ガンマ線や二次粒子のアルファ線など）は無視して終了
     }
 
-    return true;
+    //2.プロセスを取得する前の安全対策（超重要）
+    // ジオメトリの境界を跨いだだけの時などは Process が Null になることがあるため、
+    // 必ずポインタが存在するかチェックする。
+    const G4VProcess* process = aStep->GetPostStepPoint()->GetProcessDefinedStep();
+    if (!process) {
+        return false; 
+    }
+
+    // 3. プロセス名の取得と判定
+    G4String processName = process->GetProcessName();
+
+    //G4cout << "ProcessName is : " << processName << G4endl;
+
+    // 中性子捕獲 ("nCapture") が起きたかどうかを判定
+    if (processName == "nCapture") {
+        
+        // 反応が起きた瞬間の GlobalTime を取得
+        fHitTime = aStep->GetPostStepPoint()->GetGlobalTime();
+
+        G4cout << "ProcessName is : " << processName << G4endl;
+
+        //確認用
+        G4cout << "HitTime : " << fHitTime << G4endl;
+    
+        // 一度捕獲反応が起きれば中性子は消滅するため、以降の追跡を強制終了させても良いです
+        aStep->GetTrack()->SetTrackStatus(fStopAndKill);
+        
+        return true;
+    }
+
+    return false;
+
+
+
+
+
+
 }

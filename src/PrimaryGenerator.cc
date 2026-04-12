@@ -17,7 +17,7 @@ PrimaryGenerator::PrimaryGenerator()
     G4ParticleDefinition *particle = particleTable->FindParticle("neutron");
 
     fParticleGun -> SetParticlePosition(pos);
-    fParticleGun -> SetParticleEnergy(1. * MeV);
+    fParticleGun -> SetParticleEnergy(0.464 * MeV);
     fParticleGun -> SetParticleDefinition(particle);
 
     
@@ -30,12 +30,17 @@ PrimaryGenerator::~PrimaryGenerator()
 
 void PrimaryGenerator::GeneratePrimaries(G4Event *anEvent)
 {
-
+    /*
     //球状分布
     G4ThreeVector randomMom = G4RandomDirection();
-
+    
     //発射ごとに新しい方向にセット
     fParticleGun->SetParticleMomentumDirection(randomMom);
+    */
+
+    G4ThreeVector mom(0., -1., 0.);
+
+    fParticleGun->SetParticleMomentumDirection(mom);
 
     /*　確認用
     G4cout << "x: " << randomMom[0] << " y: " << randomMom[1] << " z: " << randomMom[2] << G4endl;
