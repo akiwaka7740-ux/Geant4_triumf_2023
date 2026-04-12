@@ -3,7 +3,7 @@
 SensitiveDetector::SensitiveDetector(G4String name) : G4VSensitiveDetector(name)
 {
     //物理的に意味のない時刻で初期化
-   fHitTime = -1.0 * ns ;
+   fHitTime = -1.0;
 }
 
 SensitiveDetector::~SensitiveDetector()
@@ -12,7 +12,7 @@ SensitiveDetector::~SensitiveDetector()
 
 void SensitiveDetector::Initialize(G4HCofThisEvent *)
 {
-   fHitTime = -1.0 * ns ;
+   fHitTime = -1.0 ;
 }
 
 
@@ -20,7 +20,13 @@ void SensitiveDetector::EndOfEvent(G4HCofThisEvent *)
 {
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
 
-    analysisManager->FillNtupleDColumn(0, 0, fHitTime);
+    if (fHitTime >= 0.0) {
+        // 列 (Column 0) に値をセット
+        analysisManager->FillNtupleDColumn(0, 0, fHitTime);
+        
+        // 【重要】ここで「行を確定」してNtupleに書き込む！
+        analysisManager->AddNtupleRow(0);
+    }
 
 }
 
@@ -65,10 +71,5 @@ G4bool SensitiveDetector::ProcessHits(G4Step *aStep, G4TouchableHistory *ROhist)
     }
 
     return false;
-
-
-
-
-
 
 }

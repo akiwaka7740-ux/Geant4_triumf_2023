@@ -4,6 +4,8 @@ RunAction::RunAction()
 {
     G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
 
+    analysisManager->SetNtupleMerging(true);
+
     analysisManager->CreateNtuple("neutron", "neutron");
     analysisManager->CreateNtupleDColumn("fHitTime");
     analysisManager->FinishNtuple(0);
