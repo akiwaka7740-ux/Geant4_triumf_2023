@@ -7,6 +7,7 @@
 #include "G4VisManager.hh"
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
+#include "G4Threading.hh"
 
 #include "PhysicsList.hh"
 #include "DetectorConstruction.hh"
@@ -30,8 +31,20 @@ int main(int argc, char**argv){
 
     #ifdef G4MULTITHREADED
         G4MTRunManager *runManager = new G4MTRunManager;
+
+        // ★修正ポイント2：PCの最大コア（スレッド）数を取得してセットする
+        //G4int nThreads = G4Threading::G4GetNumberOfCores();
+        
+        // ※もしPCで他の作業も並行して行いたい場合は、以下のように1〜2コア余らせるのが安全です。
+        G4int nThreads = G4Threading::G4GetNumberOfCores() - 4; 
+        
+        runManager->SetNumberOfThreads(nThreads);
+        G4cout << "=== Running in Multithread mode with " << nThreads << " threads ===" << G4endl;
+
+
     #else
         G4RunManager *runManager = new G4RunManager;
+        G4cout << "=== Running in Single thread mode ===" << G4endl;
     #endif
 
     //PhysicsList  (PhysicsList.ccは使用しない)

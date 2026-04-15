@@ -1,5 +1,4 @@
-/run/numberOfThreads 4
-
+# run.mac の内容
 /run/initialize
-
-/run/beamOn 100000
+/run/printProgress 10000
+/run/beamOn 100000000

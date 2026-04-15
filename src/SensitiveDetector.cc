@@ -4,6 +4,7 @@ SensitiveDetector::SensitiveDetector(G4String name) : G4VSensitiveDetector(name)
 {
     //物理的に意味のない時刻で初期化
    fHitTime = -1.0;
+   fHitCounter = 0;
 }
 
 SensitiveDetector::~SensitiveDetector()
@@ -13,6 +14,7 @@ SensitiveDetector::~SensitiveDetector()
 void SensitiveDetector::Initialize(G4HCofThisEvent *)
 {
    fHitTime = -1.0 ;
+   fHitCounter = 0;
 }
 
 
@@ -23,6 +25,7 @@ void SensitiveDetector::EndOfEvent(G4HCofThisEvent *)
     if (fHitTime >= 0.0) {
         // 列 (Column 0) に値をセット
         analysisManager->FillNtupleDColumn(0, 0, fHitTime);
+        analysisManager->FillNtupleIColumn(0, 1, fHitCounter);
         
         // 【重要】ここで「行を確定」してNtupleに書き込む！
         analysisManager->AddNtupleRow(0);
@@ -53,16 +56,23 @@ G4bool SensitiveDetector::ProcessHits(G4Step *aStep, G4TouchableHistory *ROhist)
 
     //G4cout << "ProcessName is : " << processName << G4endl;
 
+
+    //反応が起きたら数える
+    if (processName == "hadElastic" || "neutronInelastic"){
+        ++fHitCounter;
+    }
+
     // 中性子捕獲 ("nCapture") が起きたかどうかを判定
     if (processName == "nCapture") {
         
         // 反応が起きた瞬間の GlobalTime を取得
         fHitTime = aStep->GetPostStepPoint()->GetGlobalTime();
+        ++fHitCounter;
 
-        G4cout << "ProcessName is : " << processName << G4endl;
+        //G4cout << "ProcessName is : " << processName << G4endl;
 
         //確認用
-        G4cout << "HitTime : " << fHitTime << G4endl;
+        //G4cout << "HitTime : " << fHitTime << G4endl;
     
         // 一度捕獲反応が起きれば中性子は消滅するため、以降の追跡を強制終了させても良いです
         aStep->GetTrack()->SetTrackStatus(fStopAndKill);

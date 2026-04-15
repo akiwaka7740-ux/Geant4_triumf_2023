@@ -8,6 +8,7 @@ RunAction::RunAction()
 
     analysisManager->CreateNtuple("neutron", "neutron");
     analysisManager->CreateNtupleDColumn("fHitTime");
+    analysisManager->CreateNtupleIColumn("fHitCounter");
     analysisManager->FinishNtuple(0);
 }
 
