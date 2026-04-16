@@ -32,7 +32,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
         virtual G4VPhysicalVolume *Construct();
 
     private:
-        G4LogicalVolume *fLogicDetector;
+        G4LogicalVolume *fLV_Lig;
 
         virtual void ConstructSDandField();
 

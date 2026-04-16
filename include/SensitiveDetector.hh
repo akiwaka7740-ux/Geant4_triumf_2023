@@ -21,7 +21,9 @@ private:
     virtual void EndOfEvent(G4HCofThisEvent *) override;
 
     G4double fHitTime;
+    G4double fHitTimeCapture;
     G4int fHitCounter;
+    G4double fIncidentEnergy;
 };
 
 #endif
