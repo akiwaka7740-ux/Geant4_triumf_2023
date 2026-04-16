@@ -139,13 +139,13 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     G4RotationMatrix rot90y;
     rot90y.rotateY(90.0 * deg);
 
-    G4int Mother_ID_Uroko = 1;
-    G4int Scinti_ID_Uroko = 2;
-    G4int Guide_ID_Uroko = 3;
-    G4int PMT_ID_Uroko = 4;
-    G4int Cathode_ID_Uroko = 5;
-    G4int PMT2_ID_Uroko = 6;
-    G4int Cathode2_ID_Uroko = 7;
+    G4int Mother_ID_Uroko = 11;
+    G4int Scinti_ID_Uroko = 12;
+    G4int Guide_ID_Uroko = 13;
+    G4int PMT_ID_Uroko = 14;
+    G4int Cathode_ID_Uroko = 15;
+    G4int PMT2_ID_Uroko = 16;
+    G4int Cathode2_ID_Uroko = 17;
 
     // --- UROKO 寸法パラメータ ---
     G4double thickness_Uroko = 29 * mm;
@@ -268,7 +268,7 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     G4VPhysicalVolume *PV_PMT_Cathode2_Uroko = new G4PVPlacement(trans3D_9_Uroko, LV_PMT_Cathode2_Uroko, "PV_PMT_Cathode2_Uroko", LV_PMT2_Uroko, false, Cathode2_ID_Uroko, checkOverlaps);
         
     // =============================================================
-    // 可視化属性の設定 (UROKO)
+    // 7.可視化属性の設定 (UROKO)
     // =============================================================
 
     /*
@@ -294,21 +294,41 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     LV_PMT_Uroko->SetVisAttributes(visPMT_Uroko);
     LV_PMT2_Uroko->SetVisAttributes(visPMT_Uroko); // PMT2にも同じ色を適用
 
-
-    //UROKOを複数配置
-    const G4int numUrokoDetectors = 1;
+    // =============================================================
+    // 8.UROKOを複数配置 
+    // =============================================================
+    const G4int numUrokoDetectors = 4;
+    //宮原さんの図面を参照
     G4double updownDeg = 5.7 * deg;
-    // 検出器の中心をどこに置くか（シンチレータ同士が密着する座標を計算して入れる）
+    G4double sideDeg = 10.2 * deg;
+    // 0->up, 1->down 2->left, 3->right (下流から見て)
+    // 全体に 1.5mm の隙間（マージン）を開ける例
+    G4double margin = 1.5 * mm; 
     G4ThreeVector pos_Uroko[numUrokoDetectors] = {
-        G4ThreeVector(1000*mm, hexagon_rr_Uroko + hexagon_rr_Uroko*(1-cos(updownDeg)), 0),
+        // 上
+        G4ThreeVector(1000*mm, hexagon_rr_Uroko + margin + hexagon_rr_Uroko*(1-std::cos(updownDeg)), 0),
+        // 下
+        G4ThreeVector(1000*mm, -hexagon_rr_Uroko - margin - hexagon_rr_Uroko*(1-std::cos(updownDeg)), 0),
+        // 左
+        G4ThreeVector(1000*mm, 0, 1.5 * hexagon_r_Uroko + margin + hexagon_r_Uroko*(1-std::cos(sideDeg))),
+        // 右
+        G4ThreeVector(1000*mm, 0, -1.5 * hexagon_r_Uroko - margin - hexagon_r_Uroko*(1-std::cos(sideDeg)))
     };
+
     G4RotationMatrix* rot_Uroko[numUrokoDetectors];
     for (int i = 0; i < numUrokoDetectors; i++) {
-        rot_Uroko[i] = new G4RotationMatrix();
-        rot_Uroko[i]->rotateY(90.0 * deg);
-        rot_Uroko[i]->rotateZ(updownDeg);
-   
+        rot_Uroko[i] = new G4RotationMatrix(); 
     }
+
+    rot_Uroko[0]->rotateY(90.0 * deg);
+    rot_Uroko[0]->rotateZ(updownDeg);
+
+    rot_Uroko[1]->rotateY(90.0 * deg);
+    rot_Uroko[1]->rotateZ(-updownDeg);
+
+    rot_Uroko[2]->rotateY(90.0 * deg - sideDeg);
+    
+    rot_Uroko[3]->rotateY(90.0 * deg + sideDeg);
 
     // ループで配置
     for (G4int i = 0; i < numUrokoDetectors; i++) {
@@ -321,8 +341,6 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
             checkOverlaps         // 重なりチェック
         );
     }
-
-
 
 
     return PV_World;
