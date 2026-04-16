@@ -14,6 +14,7 @@
 #include "G4PVPlacement.hh"
 #include "G4UnionSolid.hh"
 #include "G4IntersectionSolid.hh"
+#include "G4AssemblyVolume.hh"
 
 #include "G4NistManager.hh"
 #include "G4SystemOfUnits.hh"
@@ -22,6 +23,8 @@
 #include "G4VisAttributes.hh"
 #include "G4Color.hh"
 #include "G4SDManager.hh"
+
+
 
 #include "SensitiveDetector.hh"
 
