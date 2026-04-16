@@ -65,19 +65,28 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     matGS20->AddMaterial(Ce2O3,  4.0 * perCent);
     matGS20->AddMaterial(Li2O,  15.5 * perCent);
 
+
+    //for uroko
+    auto BC408 = nist->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
+    auto acrylic = nist->FindOrBuildMaterial("G4_PLEXIGLASS");
+    auto aluminum = nist->FindOrBuildMaterial("G4_Al");
+    auto vaccum = nist->FindOrBuildMaterial("G4_Galactic");
+    auto glass = nist->FindOrBuildMaterial("G4_Pyrex_Glass");
+
+
     // =============================================================
     // World Volume
     // =============================================================
-    G4double xWorld = 2. * m;
-    G4double yWorld = 2. * m;
-    G4double zWorld = 2. * m;
+    G4double xWorld = 4. * m;
+    G4double yWorld = 4. * m;
+    G4double zWorld = 4. * m;
     
     G4Box *SL_World = new G4Box("SL_World", 0.5*xWorld, 0.5*yWorld, 0.5*zWorld);
     G4LogicalVolume *LV_World = new G4LogicalVolume(SL_World, matAir, "LV_World"); // solidWorldのスペルミスを修正
     // PVPlacementのコピー番号(第6引数)は0にしておくのが一般的です
     G4VPhysicalVolume *PV_World = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), LV_World, "PV_World", 0, false, 0, checkOverlaps);
 
-    
+
     // =============================================================
     // Lig Volume (Li-glass Scintillator)
     // =============================================================
@@ -114,6 +123,148 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     ligVisAtt->SetForceSolid(true);
     fLV_Lig->SetVisAttributes(ligVisAtt);
 
+
+
+
+    // =============================================================
+    // 1. UROKOジオメトリの寸法と変数の定義
+    // =============================================================
+
+    // --- 型の略称定義（エイリアス） ---
+    using GVC = G4ThreeVector;
+    using GTR = G4Transform3D;
+
+    // --- 回転行列の定義 ---
+    // Y軸周りに90度回転する行列を作成
+    G4RotationMatrix rot90y;
+    rot90y.rotateY(90.0 * deg);
+
+    G4int Mother_ID_Uroko = 1;
+    G4int Scinti_ID_Uroko = 2;
+    G4int Guide_ID_Uroko = 3;
+    G4int PMT_ID_Uroko = 4;
+    G4int Cathode_ID_Uroko = 5;
+    G4int PMT2_ID_Uroko = 6;
+    G4int Cathode2_ID_Uroko = 7;
+
+    // --- UROKO 寸法パラメータ ---
+    G4double thickness_Uroko = 29 * mm;
+    G4double PMT_W_Uroko = 26.2 * mm;
+    G4double PMT_L_Uroko = 32.5 * mm;
+    G4double PMT_C_Uroko = 30 * mm;
+    G4double cathode_W_Uroko = 23 * mm;
+    G4double cathode_T_Uroko = 0.8 * mm;
+    G4double guide_L_Uroko = 40 * mm;
+    G4double guide_S_Uroko = 10 * mm;
+    G4double flight_length_Uroko = 1.5 * m;
+    G4double hexagon_r_Uroko = 100 * mm;
+    G4double hexagon_rr_Uroko = hexagon_r_Uroko * std::sqrt(3) / 2 * mm; 
+    G4double hexagon_length_Uroko = std::sqrt(1500 * 1500 - hexagon_r_Uroko * hexagon_r_Uroko) * mm;
+
+    // ポリゴン（多角柱）用配列
+    G4double z1_Uroko[] = {0, thickness_Uroko};
+    G4double rI1_Uroko[] = {0, 0};
+    G4double rO1_Uroko[] = {hexagon_rr_Uroko, hexagon_rr_Uroko};
+    G4double z2_Uroko[] = {-guide_L_Uroko / 2, guide_L_Uroko / 2};
+    G4double PMT_W2_Uroko = (PMT_W_Uroko + ((PMT_C_Uroko - PMT_W_Uroko) / 2)) * 2;
+    G4double rO2_Uroko[] = {hexagon_rr_Uroko, (PMT_W2_Uroko * std::sqrt(3) + PMT_W_Uroko) / 4};
+
+
+    // =============================================================
+    // 2. UROKO Mother Volume (検出器全体を囲む箱)
+    // =============================================================
+    G4Box *SL_Mother_Uroko = new G4Box("SL_Mother_Uroko", hexagon_r_Uroko * 1.1, hexagon_r_Uroko * 1.1, (thickness_Uroko + guide_L_Uroko + guide_S_Uroko + PMT_L_Uroko) * 1.1);
+    G4LogicalVolume *LV_Mother_Uroko = new G4LogicalVolume(SL_Mother_Uroko, LV_World->GetMaterial(), "LV_Mother_Uroko", 0, 0, 0);
+
+    // 注意: rot90y, GTR, GVC は元のコードのエイリアス/変数をそのまま使用
+    G4VPhysicalVolume *PV_Mother_Uroko = new G4PVPlacement(GTR(rot90y, GVC(flight_length_Uroko, 0, 0)), LV_Mother_Uroko, "PV_Mother_Uroko", LV_World, false, Mother_ID_Uroko, checkOverlaps);
+
+    G4Polyhedra *SL_Mother2_Uroko = new G4Polyhedra("SL_Mother2_Uroko", 0 * degree, 360 * degree, 6, 2, z1_Uroko, rI1_Uroko, rO1_Uroko);
+    G4LogicalVolume *LV_Mother2_Uroko = new G4LogicalVolume(SL_Mother2_Uroko, LV_World->GetMaterial(), "LV_Mother2_Uroko", 0, 0, 0);
+
+    auto rotation_1_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_1_Uroko = G4ThreeVector(0, 0, hexagon_length_Uroko - flight_length_Uroko - thickness_Uroko);
+    auto trans3D_1_Uroko = G4Transform3D(rotation_1_Uroko, position_1_Uroko);
+    G4VPhysicalVolume *PV_Mother2_Uroko = new G4PVPlacement(trans3D_1_Uroko, LV_Mother2_Uroko, "PV_Mother2_Uroko", LV_Mother_Uroko, false, Mother_ID_Uroko, checkOverlaps);
+
+
+    // =============================================================
+    // 3. UROKO Scintillator (プラスチックシンチレータ)
+    // =============================================================
+    G4Polyhedra *SL_Scinti_Uroko = new G4Polyhedra("SL_Scinti_Uroko", 0 * degree, 360 * degree, 6, 2, z1_Uroko, rI1_Uroko, rO1_Uroko);
+    G4LogicalVolume *LV_Scinti_Uroko = new G4LogicalVolume(SL_Scinti_Uroko, BC408, "LV_Scinti_Uroko", 0, 0, 0);
+
+    auto rotation_2_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_2_Uroko = G4ThreeVector(0, 0, hexagon_length_Uroko - flight_length_Uroko);
+    auto trans3D_2_Uroko = G4Transform3D(rotation_2_Uroko, position_2_Uroko);
+    G4VPhysicalVolume *PV_Scinti_Uroko = new G4PVPlacement(trans3D_2_Uroko, LV_Scinti_Uroko, "PV_Scinti_Uroko", LV_Mother_Uroko, false, Scinti_ID_Uroko, checkOverlaps);
+
+
+    // =============================================================
+    // 4. UROKO Light Guide (ライトガイド)
+    // =============================================================
+    G4Trd *SL_Guide1_Uroko = new G4Trd("SL_Guide1_Uroko", hexagon_r_Uroko, PMT_W2_Uroko / 2, (hexagon_r_Uroko * std::sqrt(3)) / 2, PMT_W_Uroko / 2, guide_L_Uroko / 2);
+    G4Polyhedra *SL_Guide2_Uroko = new G4Polyhedra("SL_Guide2_Uroko", 0 * degree, 360 * degree, 6, 2, z2_Uroko, rI1_Uroko, rO2_Uroko);
+    G4IntersectionSolid *SL_Guide3_Uroko = new G4IntersectionSolid("SL_Guide3_Uroko", SL_Guide1_Uroko, SL_Guide2_Uroko);
+    G4Box *SL_Guide4_Uroko = new G4Box("SL_Guide4_Uroko", PMT_W2_Uroko / 2, PMT_W_Uroko / 2, guide_S_Uroko / 2);
+
+    auto rotation_4_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_4_Uroko = G4ThreeVector(0, 0, (guide_L_Uroko / 2) - guide_S_Uroko + (thickness_Uroko / 2));
+    auto trans3D_4_Uroko = G4Transform3D(rotation_4_Uroko, position_4_Uroko);
+    G4UnionSolid *SL_Guide_Uroko = new G4UnionSolid("SL_Guide_Uroko", SL_Guide3_Uroko, SL_Guide4_Uroko, trans3D_4_Uroko);
+    G4LogicalVolume *LV_Guide_Uroko = new G4LogicalVolume(SL_Guide_Uroko, acrylic, "LV_Guide_Uroko", 0, 0, 0);
+
+    auto rotation_5_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_5_Uroko = G4ThreeVector(0, 0, hexagon_length_Uroko - flight_length_Uroko + (guide_L_Uroko / 2) + thickness_Uroko);
+    auto trans3D_5_Uroko = G4Transform3D(rotation_5_Uroko, position_5_Uroko);
+    G4VPhysicalVolume *PV_Guide_Uroko = new G4PVPlacement(trans3D_5_Uroko, LV_Guide_Uroko, "PV_Guide_Uroko", LV_Mother_Uroko, false, Guide_ID_Uroko, checkOverlaps);
+
+
+    // =============================================================
+    // 5. UROKO PMT 1 & 光電面 (カソード)
+    // =============================================================
+    G4Box *SL_PMT_Uroko = new G4Box("SL_PMT_Uroko", PMT_W_Uroko / 2, PMT_W_Uroko / 2, PMT_L_Uroko / 2);
+    G4LogicalVolume *LV_PMT_Uroko = new G4LogicalVolume(SL_PMT_Uroko, glass, "LV_PMT_Uroko", 0, 0, 0);
+
+    auto rotation_6_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_6_Uroko = G4ThreeVector(-PMT_C_Uroko / 2, 0, hexagon_length_Uroko - flight_length_Uroko + thickness_Uroko - 1.0 + guide_L_Uroko + guide_S_Uroko + (PMT_L_Uroko / 2));
+    auto trans3D_6_Uroko = G4Transform3D(rotation_6_Uroko, position_6_Uroko);
+    G4VPhysicalVolume *PV_PMT_Uroko = new G4PVPlacement(trans3D_6_Uroko, LV_PMT_Uroko, "PV_PMT_Uroko", LV_Mother_Uroko, false, PMT_ID_Uroko, checkOverlaps);
+
+    G4Box *SL_PMT_Cathode_Uroko = new G4Box("SL_PMT_Cathode_Uroko", cathode_W_Uroko / 2, cathode_W_Uroko / 2, cathode_T_Uroko / 2);
+    G4LogicalVolume *LV_PMT_Cathode_Uroko = new G4LogicalVolume(SL_PMT_Cathode_Uroko, aluminum, "LV_PMT_Cathode_Uroko", 0, 0, 0);
+
+    auto rotation_7_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_7_Uroko = G4ThreeVector(0, 0, -(PMT_L_Uroko / 2) + 3 * (cathode_T_Uroko / 2));
+    auto trans3D_7_Uroko = G4Transform3D(rotation_7_Uroko, position_7_Uroko);
+    G4VPhysicalVolume *PV_PMT_Cathode_Uroko = new G4PVPlacement(trans3D_7_Uroko, LV_PMT_Cathode_Uroko, "PV_PMT_Cathode_Uroko", LV_PMT_Uroko, false, Cathode_ID_Uroko, checkOverlaps);
+
+
+    // =============================================================
+    // 6. UROKO PMT 2 & 光電面 (カソード)
+    // =============================================================
+    G4Box *SL_PMT2_Uroko = new G4Box("SL_PMT2_Uroko", PMT_W_Uroko / 2, PMT_W_Uroko / 2, PMT_L_Uroko / 2);
+    G4LogicalVolume *LV_PMT2_Uroko = new G4LogicalVolume(SL_PMT2_Uroko, glass, "LV_PMT2_Uroko", 0, 0, 0);
+
+    auto rotation_8_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_8_Uroko = G4ThreeVector(PMT_C_Uroko / 2, 0, hexagon_length_Uroko - flight_length_Uroko + thickness_Uroko - 1.0 + guide_L_Uroko + guide_S_Uroko + (PMT_L_Uroko / 2));
+    auto trans3D_8_Uroko = G4Transform3D(rotation_8_Uroko, position_8_Uroko);
+    G4VPhysicalVolume *PV_PMT2_Uroko = new G4PVPlacement(trans3D_8_Uroko, LV_PMT2_Uroko, "PV_PMT2_Uroko", LV_Mother_Uroko, false, PMT2_ID_Uroko, checkOverlaps);
+
+    G4Box *SL_PMT_Cathode2_Uroko = new G4Box("SL_PMT_Cathode2_Uroko", cathode_W_Uroko / 2, cathode_W_Uroko / 2, cathode_T_Uroko / 2);
+    G4LogicalVolume *LV_PMT_Cathode2_Uroko = new G4LogicalVolume(SL_PMT_Cathode2_Uroko, aluminum, "LV_PMT_Cathode2_Uroko", 0, 0, 0);
+
+    auto rotation_9_Uroko = G4RotationMatrix(0., 0., 0.);
+    auto position_9_Uroko = G4ThreeVector(0, 0, -(PMT_L_Uroko / 2) + 3 * (cathode_T_Uroko / 2));
+    auto trans3D_9_Uroko = G4Transform3D(rotation_9_Uroko, position_9_Uroko);
+    G4VPhysicalVolume *PV_PMT_Cathode2_Uroko = new G4PVPlacement(trans3D_9_Uroko, LV_PMT_Cathode2_Uroko, "PV_PMT_Cathode2_Uroko", LV_PMT2_Uroko, false, Cathode2_ID_Uroko, checkOverlaps);
+        
+
+
+
+
+
+
     return PV_World;
 }
 
@@ -123,3 +274,6 @@ void DetectorConstruction::ConstructSDandField()
     fLV_Lig->SetSensitiveDetector(sensDet);
     G4SDManager::GetSDMpointer()->AddNewDetector(sensDet);
 }
+
+
+    
