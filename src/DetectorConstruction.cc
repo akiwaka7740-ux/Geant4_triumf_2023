@@ -88,41 +88,113 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
 
 
     // =============================================================
-    // Lig Volume (Li-glass Scintillator)
+    // 1.寸法と変数の定義 (Li-glass Scintillator)
     // =============================================================
-    G4double diameterLig = 50.0 * mm;
-    G4double thicknessLig = 10.0 * mm;
+
+
+    G4int Scinti_ID_Lig = 01;
+    G4int PMT_ID_Lig = 02;
+    G4int Cathode_Lig = 03;
+
+
+    //寸法パラメータ
+    G4double diameter_Lig = 50.0 * mm;
+    G4double thickness_Lig = 10.0 * mm;
+    G4double PMT_W_Lig = 53.0 * mm;
+    G4double PMT_L_Lig = 235.0 * mm;
+    G4double PMT_C_Lig = 60.0 * mm;
+    G4double cathode_W_lig = 46.0 * mm;
+    G4double cathode_T_Lig = 1.0 * mm;
+
+    // =============================================================
+    // 2. Lig Mother Volume (アセンブリを使用)
+    // =============================================================
+
+    G4AssemblyVolume* assembly_Lig = new G4AssemblyVolume();
+
+    // =============================================================
+    // 3. Lig Scintillator (プラスチックシンチレータ)
+    // =============================================================
 
     G4Tubs* SL_Lig = new G4Tubs(
         "SL_Lig", 
         0.0 * mm,                      
-        diameterLig / 2.0,        
-        thicknessLig / 2.0,       
+        diameter_Lig / 2.0,        
+        thickness_Lig / 2.0,       
         0.0 * deg,                     
         360.0 * deg                    
     );
 
-    G4RotationMatrix* rotLig = new G4RotationMatrix();
-    // 円柱の軸(Z)をY軸に向けるため、X軸周りに90度回転させる
-    rotLig->rotateX(90.0 * deg);
-
-    G4double xLig = 0.0 * mm;
-    G4double frontLig = -132.0 * mm; // 検出器前面の位置
-    // 中心位置は、前面からさらに「厚さの半分」だけ負の方向へ進んだ場所
-    G4double yLig = frontLig - (thicknessLig / 2.0); 
-    G4double zLig = 0.0 * mm;
-
-    // ヘッダーファイル(DetectorConstruction.hh)側の変数名も fLV_Lig に変更する必要があります
     fLV_Lig = new G4LogicalVolume(SL_Lig, matGS20, "LV_Lig");
-    
-    // 第5引数(母体積)は LV_World。コピー番号の 0 も明記。
-    G4VPhysicalVolume *PV_Lig = new G4PVPlacement(rotLig, G4ThreeVector(xLig, yLig, zLig), fLV_Lig, "PV_Lig", LV_World, false, 0, checkOverlaps);
 
-    // 可視化属性の変数名も lig に統一
+    // 【アセンブリ内のローカル座標】
+    // シンチレータの中心をアセンブリの「基準点 (0,0,0)」とします。
+    G4RotationMatrix* rot_Lig = new G4RotationMatrix();
+    rot_Lig->rotateX(90.0 * deg); // 円柱の軸(Z)をY軸に向ける
+    
+    G4ThreeVector pos_Lig = G4ThreeVector(0.0, 0.0, 0.0);
+    G4Transform3D trans_Lig = G4Transform3D(*rot_Lig, pos_Lig);
+
+    // G4PVPlacement を消し、代わりにアセンブリへ登録(AddPlacedVolume)します
+    assembly_Lig->AddPlacedVolume(fLV_Lig, trans_Lig);
+
+    // =============================================================
+    // 4. Lig PMT and Cathode 
+    // =============================================================
+    G4Tubs* SL_PMT_Lig = new G4Tubs(
+        "SL_PMT_Lig", 
+        0.0 * mm,                      
+        PMT_W_Lig / 2.0,        
+        PMT_L_Lig / 2.0,       
+        0.0 * deg,                     
+        360.0 * deg                    
+    );
+
+    G4LogicalVolume *LV_PMT_Lig = new G4LogicalVolume(SL_PMT_Lig, glass, "LV_PMT_Lig", 0, 0, 0);
+
+    // 【アセンブリ内のローカル座標】
+    G4RotationMatrix* rot_PMT_Lig = new G4RotationMatrix();
+    rot_PMT_Lig->rotateX(90.0 * deg); // PMTもY軸方向に向ける
+    
+    // シンチレータ(原点)の後ろに密着させる計算
+    // シンチレータの厚さの半分 ＋ PMTの長さの半分 だけマイナスY方向へズラす
+    G4ThreeVector pos_PMT_Lig = G4ThreeVector(0.0, -(thickness_Lig / 2.0) - (PMT_L_Lig / 2.0), 0.0);
+    G4Transform3D trans_PMT_Lig = G4Transform3D(*rot_PMT_Lig, pos_PMT_Lig);
+
+    // アセンブリへ登録 
+    assembly_Lig->AddPlacedVolume(LV_PMT_Lig, trans_PMT_Lig);
+
+
+    // =============================================================
+    // 5. 最後に完成した Lig アセンブリをワールド空間へ配置 (MakeImprint)
+    // =============================================================
+    
+    // ここで初めて、元のコードにあった「ワールド座標での位置」を指定します
+    G4double front_Lig = -132.0 * mm; // 検出器前面の位置
+    
+    // アセンブリの基準点（＝シンチレータの中心）のワールド座標を計算
+    G4ThreeVector pos_Assembly_Lig = G4ThreeVector(0.0, front_Lig - (thickness_Lig / 2.0), 0.0);
+    G4RotationMatrix* rot_Assembly_Lig = new G4RotationMatrix(); // 回転なし
+
+    // 空間へ実体化
+    assembly_Lig->MakeImprint(
+        LV_World,             // 配置先（ワールド空間）
+        pos_Assembly_Lig,     // 位置
+        rot_Assembly_Lig,     // 回転
+        0,                    // コピー番号
+        checkOverlaps         // 重なりチェック
+    );
+
+
+    // 6.可視化属性の付与
     G4VisAttributes *ligVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0.0, 0.5));
     ligVisAtt->SetForceSolid(true);
     fLV_Lig->SetVisAttributes(ligVisAtt);
 
+    // PMT部分：紫 (透明度 0.8)
+    G4VisAttributes* visPMT_Lig = new G4VisAttributes(G4Color(0.5, 0.0, 0.5, 0.8));
+    visPMT_Lig->SetForceSolid(true);
+    LV_PMT_Lig->SetVisAttributes(visPMT_Lig);
 
 
 
