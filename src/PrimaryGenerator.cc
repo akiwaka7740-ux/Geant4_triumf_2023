@@ -38,7 +38,7 @@ void PrimaryGenerator::GeneratePrimaries(G4Event *anEvent)
     fParticleGun->SetParticleMomentumDirection(randomMom);
     */
 
-    G4ThreeVector mom(1.0, 0., 0.);
+    G4ThreeVector mom(0., -1.0, 0.);
 
     fParticleGun->SetParticleMomentumDirection(mom);
 

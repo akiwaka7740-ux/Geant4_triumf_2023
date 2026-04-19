@@ -8,7 +8,7 @@ include(${Geant4_USE_FILE})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cc)
+file(GLOB_RECURSE sources ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 file(GLOB MACRO_FILES "macros/*.mac")
 file(COPY ${MACRO_FILES} DESTINATION ${CMAKE_BINARY_DIR}/)

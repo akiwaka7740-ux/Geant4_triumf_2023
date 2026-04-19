@@ -1,49 +1,33 @@
-#ifndef DETECTORCONSTRUCTION_HH
-
-#define DETECTORCONSTRUCTION_HH
+#ifndef DetectorConstruction_hh
+#define DetectorConstruction_hh 1
 
 #include "G4VUserDetectorConstruction.hh"
+#include "globals.hh"
 
-#include "G4Box.hh"
-#include "G4Tubs.hh"
-#include "G4Polyhedra.hh"
-#include "G4Trd.hh"
+class G4VPhysicalVolume;
+class G4LogicalVolume;
+class LigLogVol;
+class UrokoLogVol;
 
-#include "G4LogicalVolume.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4PVPlacement.hh"
-#include "G4UnionSolid.hh"
-#include "G4IntersectionSolid.hh"
-#include "G4AssemblyVolume.hh"
-
-#include "G4NistManager.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4UnitsTable.hh"
-
-#include "G4VisAttributes.hh"
-#include "G4Color.hh"
-#include "G4SDManager.hh"
-
-
-
-#include "SensitiveDetector.hh"
-
-
-
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 class DetectorConstruction : public G4VUserDetectorConstruction
 {
-    public:
-        DetectorConstruction();
-        virtual ~DetectorConstruction();
+  public:
+    DetectorConstruction();
+    virtual ~DetectorConstruction();
 
-        virtual G4VPhysicalVolume *Construct();
+    virtual G4VPhysicalVolume* Construct();
+    virtual void ConstructSDandField();
 
-    private:
-        G4LogicalVolume *fLV_Lig;
+  private:
+    // 各検出器クラスのインスタンス
+    LigLogVol* fLig;
+    UrokoLogVol* fUroko;
 
-        virtual void ConstructSDandField();
-
+    G4LogicalVolume* World_LogVol;
 };
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif
