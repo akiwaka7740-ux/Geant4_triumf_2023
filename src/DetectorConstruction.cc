@@ -103,7 +103,7 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     G4double PMT_W_Lig = 53.0 * mm;
     G4double PMT_L_Lig = 235.0 * mm;
     G4double PMT_C_Lig = 60.0 * mm;
-    G4double cathode_W_lig = 46.0 * mm;
+    G4double cathode_W_Lig = 46.0 * mm;
     G4double cathode_T_Lig = 1.0 * mm;
 
     // =============================================================
@@ -135,7 +135,7 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     G4ThreeVector pos_Lig = G4ThreeVector(0.0, 0.0, 0.0);
     G4Transform3D trans_Lig = G4Transform3D(*rot_Lig, pos_Lig);
 
-    // G4PVPlacement を消し、代わりにアセンブリへ登録(AddPlacedVolume)します
+    // アセンブリへ登録(AddPlacedVolume)します
     assembly_Lig->AddPlacedVolume(fLV_Lig, trans_Lig);
 
     // =============================================================
@@ -158,11 +158,34 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     
     // シンチレータ(原点)の後ろに密着させる計算
     // シンチレータの厚さの半分 ＋ PMTの長さの半分 だけマイナスY方向へズラす
-    G4ThreeVector pos_PMT_Lig = G4ThreeVector(0.0, -(thickness_Lig / 2.0) - (PMT_L_Lig / 2.0), 0.0);
+    G4ThreeVector pos_PMT_Lig = G4ThreeVector(0.0, -(thickness_Lig / 2.0) - (PMT_L_Lig / 2.0) - cathode_T_Lig, 0.0);
     G4Transform3D trans_PMT_Lig = G4Transform3D(*rot_PMT_Lig, pos_PMT_Lig);
 
     // アセンブリへ登録 
     assembly_Lig->AddPlacedVolume(LV_PMT_Lig, trans_PMT_Lig);
+
+    G4Tubs* SL_Cathode_Lig = new G4Tubs(
+        "SL_PMT_Cathode", 
+        0.0 * mm,                      
+        cathode_W_Lig / 2.0,        
+        cathode_T_Lig / 2.0,       
+        0.0 * deg,                     
+        360.0 * deg                    
+    );
+
+    G4LogicalVolume *LV_Cathode_Lig = new G4LogicalVolume(SL_Cathode_Lig, aluminum, "LV_Cathode_Lig", 0, 0, 0);
+
+    // 【アセンブリ内のローカル座標】
+    G4RotationMatrix* rot_Cathode_Lig = new G4RotationMatrix();
+    rot_Cathode_Lig->rotateX(90.0 * deg); // PMTもY軸方向に向ける
+
+        // シンチレータ(原点)の後ろに密着させる計算
+    // シンチレータの厚さの半分 ＋ Cathodeの長さの半分 だけマイナスY方向へズラす
+    G4ThreeVector pos_Cathode_Lig = G4ThreeVector(0.0, -(thickness_Lig / 2.0) - (cathode_T_Lig/2.0), 0.0);
+    G4Transform3D trans_Cathode_Lig = G4Transform3D(*rot_Cathode_Lig, pos_Cathode_Lig);
+
+     // アセンブリへ登録 
+    assembly_Lig->AddPlacedVolume(LV_Cathode_Lig, trans_Cathode_Lig);
 
 
     // =============================================================
@@ -196,6 +219,10 @@ G4VPhysicalVolume *DetectorConstruction::Construct() {
     visPMT_Lig->SetForceSolid(true);
     LV_PMT_Lig->SetVisAttributes(visPMT_Lig);
 
+    // Cathode部分：青色 (透明度 0.4)
+    G4VisAttributes* visCathode_Lig = new G4VisAttributes(G4Color(0.0, 0.0, 1.0, 0.5));
+    visCathode_Lig->SetForceSolid(true);
+    LV_Cathode_Lig->SetVisAttributes(visCathode_Lig);
 
 
     // =============================================================
