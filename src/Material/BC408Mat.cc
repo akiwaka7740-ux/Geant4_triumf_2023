@@ -1,4 +1,4 @@
-#include "Material/BC408.hh"
+#include "Material/BC408Mat.hh"
 #include "G4NistManager.hh"
 
 BC408Mat::BC408Mat() {

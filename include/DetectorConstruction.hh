@@ -8,6 +8,7 @@ class G4VPhysicalVolume;
 class G4LogicalVolume;
 class LigLogVol;
 class UrokoLogVol;
+class HILELogVol;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -24,6 +25,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     // 各検出器クラスのインスタンス
     LigLogVol* fLig;
     UrokoLogVol* fUroko;
+    HILELogVol* fHile;
 
     G4LogicalVolume* World_LogVol;
 };

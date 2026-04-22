@@ -1,5 +1,5 @@
 #include "LogVol/UrokoLogVol.hh"
-#include "Material/BC408.hh"
+#include "Material/BC408Mat.hh"
 
 #include "G4Box.hh"
 #include "G4Trd.hh"

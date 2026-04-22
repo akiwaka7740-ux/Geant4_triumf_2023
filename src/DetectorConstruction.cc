@@ -1,6 +1,7 @@
 #include "DetectorConstruction.hh"
 #include "LogVol/LigLogVol.hh"
 #include "LogVol/UrokoLogVol.hh"
+#include "LogVol/HILELogVol.hh"
 
 #include "G4RunManager.hh"
 #include "G4NistManager.hh"
@@ -19,6 +20,17 @@ DetectorConstruction::DetectorConstruction()
 
 DetectorConstruction::~DetectorConstruction()
 {}
+
+namespace {
+  enum Axis { X, Y, Z };
+  G4Transform3D Rotate(int axis, double angle) {
+    G4RotationMatrix rot;
+    if( axis==Axis::X ) rot.rotateX( angle );
+    if( axis==Axis::Y ) rot.rotateY( angle );
+    if( axis==Axis::Z ) rot.rotateZ( angle );
+    return G4Transform3D( rot, G4ThreeVector( 0,0,0 ) );
+  }
+}
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
@@ -49,10 +61,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   rot_Lig.rotateX(-90.0 * deg); // 前面(シンチ)を原点方向へ
   G4ThreeVector pos_Lig(0.0, front_Lig - (total_length_Lig / 2.0), 0.0);
 
-  new G4PVPlacement(G4Transform3D(rot_Lig, pos_Lig), "LigGlass_Phys", Lig_LogVol, World_PhysVol, false, 0, checkOverlaps);
+  //new G4PVPlacement(G4Transform3D(rot_Lig, pos_Lig), "LigGlass_Phys", Lig_LogVol, World_PhysVol, false, 0, checkOverlaps);
 
   
-
+  /*
   // =============================================================
   // UROKO Detector 配置 (4台)
   // =============================================================
@@ -97,6 +109,29 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   for(G4int i=0; i<numUroko; i++) {
     new G4PVPlacement(G4Transform3D(*rot_Uroko[i], pos_Uroko[i]), "Uroko_Phys", Uroko_LogVol, World_PhysVol, false, i, checkOverlaps);
   }
+  */
+
+  // =============================================================
+  // HILE Detector 配置 (6台)
+  // =============================================================
+
+  fHile = new HILELogVol("HILE", 0, checkOverlaps);
+  G4LogicalVolume* Hile_LogVol = fHile->GetLogicalVolume();
+
+  // 1. 配置パラメータ
+  // シンチレータ表面がMV原点なので、そのまま 700mm 離せばOK
+  G4double dist_to_surface = 0.0 * mm; 
+  G4double angle_Z = (0) * deg;
+
+  // 2. 変換（Transform）の合成
+  // 手順：X軸90度回転 → 700mm押し出す → Z軸周りに回転（左から順に実行される）
+  G4Transform3D transform_HILE = 
+      Rotate(Axis::Z, angle_Z) * G4Translate3D(dist_to_surface, 0, 0) * Rotate(Axis::X, 0.0 * deg);
+
+  // 3. 配置
+  new G4PVPlacement(transform_HILE, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+
 
   return World_PhysVol;
 }

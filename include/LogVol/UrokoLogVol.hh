@@ -1,5 +1,5 @@
-#ifndef UrokoLogVol_hh
-#define UrokoLogVol_hh 1
+#ifndef UROKOLogVol_hh
+#define UROKOLogVol_hh 1
 
 #include "globals.hh"
 #include "G4ThreeVector.hh"
