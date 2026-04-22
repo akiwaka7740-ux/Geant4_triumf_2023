@@ -61,10 +61,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   rot_Lig.rotateX(-90.0 * deg); // 前面(シンチ)を原点方向へ
   G4ThreeVector pos_Lig(0.0, front_Lig - (total_length_Lig / 2.0), 0.0);
 
-  //new G4PVPlacement(G4Transform3D(rot_Lig, pos_Lig), "LigGlass_Phys", Lig_LogVol, World_PhysVol, false, 0, checkOverlaps);
+  new G4PVPlacement(G4Transform3D(rot_Lig, pos_Lig), "LigGlass_Phys", Lig_LogVol, World_PhysVol, false, 0, checkOverlaps);
 
   
-  /*
+
   // =============================================================
   // UROKO Detector 配置 (4台)
   // =============================================================
@@ -109,8 +109,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   for(G4int i=0; i<numUroko; i++) {
     new G4PVPlacement(G4Transform3D(*rot_Uroko[i], pos_Uroko[i]), "Uroko_Phys", Uroko_LogVol, World_PhysVol, false, i, checkOverlaps);
   }
-  */
 
+
+  
   // =============================================================
   // HILE Detector 配置 (6台)
   // =============================================================
@@ -119,17 +120,67 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4LogicalVolume* Hile_LogVol = fHile->GetLogicalVolume();
 
   // 1. 配置パラメータ
-  // シンチレータ表面がMV原点なので、そのまま 700mm 離せばOK
-  G4double dist_to_surface = 0.0 * mm; 
-  G4double angle_Z = (0) * deg;
+  double rMin_HILE_Scinti = 700.0 * mm;
+  double rMax_HILE_Scinti = 712.5 * mm;
+  double h_HILE_Scinti    = 150.0 * mm;
+  double rot_angle_HILE_1 = 27.4 * deg;
+  double rot_angle_HILE_2 = 12.6 * deg;
+
+  double x_shift_HILE = -h_HILE_Scinti/2 * std::sin(rot_angle_HILE_2) * mm ;
+  double z_shift_HILE =  h_HILE_Scinti/2 * (1 + std::cos(rot_angle_HILE_2)) * mm ;
+  // 厚さ分を考慮するための余白
+  double margin_HILE = 7.5 * mm ;
+  
 
   // 2. 変換（Transform）の合成
-  // 手順：X軸90度回転 → 700mm押し出す → Z軸周りに回転（左から順に実行される）
-  G4Transform3D transform_HILE = 
-      Rotate(Axis::Z, angle_Z) * G4Translate3D(dist_to_surface, 0, 0) * Rotate(Axis::X, 0.0 * deg);
+
+  G4Transform3D transform_HILE_UM = 
+      Rotate(Axis::Z, rot_angle_HILE_1) * G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0) * Rotate(Axis::X, 180 * deg);
+
+  G4Transform3D transform_HILE_UL = 
+      Rotate(Axis::Z, rot_angle_HILE_1) *  G4Translate3D(x_shift_HILE, 0, -z_shift_HILE - margin_HILE) *
+          G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0) * Rotate(Axis::Y, rot_angle_HILE_2) * Rotate(Axis::X, 180 * deg)  ;
+
+  G4Transform3D transform_HILE_UR = 
+      Rotate(Axis::Z, rot_angle_HILE_1) *  G4Translate3D(x_shift_HILE, 0, z_shift_HILE + margin_HILE) *
+          G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0) * Rotate(Axis::Y, -rot_angle_HILE_2) * Rotate(Axis::X, 180 * deg)  ;
+
+
+  G4Transform3D transform_HILE_DM = 
+      Rotate(Axis::Z, -rot_angle_HILE_1) * G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0);
+
+  G4Transform3D transform_HILE_DL = 
+      Rotate(Axis::Z, -rot_angle_HILE_1) *  G4Translate3D(x_shift_HILE, 0, -z_shift_HILE - margin_HILE) *
+          G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0) * Rotate(Axis::Y, rot_angle_HILE_2)  ; 
+
+  G4Transform3D transform_HILE_DR = 
+      Rotate(Axis::Z, -rot_angle_HILE_1) *  G4Translate3D(x_shift_HILE, 0, z_shift_HILE + margin_HILE) *
+          G4Translate3D((rMin_HILE_Scinti + rMax_HILE_Scinti)/2, 0, 0) * Rotate(Axis::Y, -rot_angle_HILE_2) ;
+
+  
 
   // 3. 配置
-  new G4PVPlacement(transform_HILE, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //UM
+  new G4PVPlacement(transform_HILE_UM, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //UL
+  new G4PVPlacement(transform_HILE_UL, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //UR
+  new G4PVPlacement(transform_HILE_UR, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //DM
+  new G4PVPlacement(transform_HILE_DM, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //DL
+  new G4PVPlacement(transform_HILE_DL, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  //DR
+  new G4PVPlacement(transform_HILE_DR, Hile_LogVol, "HILE_Phys", World_LogVol, false, 0, checkOverlaps);
+
+  
+
 
 
 
