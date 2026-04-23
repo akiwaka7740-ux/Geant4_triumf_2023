@@ -25,7 +25,7 @@ std::map<G4String, EnableAndID> Mode = {
   {"LigGlass",  { true,    1,    1 } },
   {"Uroko",     { true,   10,    4 } },
   {"HILE",      { true,   20,    6 } },
-  {"HPGe",      { true,   30,    2 } }
+  {"HPGe",      { true,   30,    7 } }
 };
 
 namespace {
@@ -190,20 +190,34 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     const int nObj = Mode[objName].nObj;
 
     G4String GeName[nObj]={
-   
+      "Handai50",   //Ge0 (実際は55%)
+      "SUNY_LEPS",  //Ge1
+      "Handai60",   //Ge2 (実際はKyudai80%)
       "SUNY_ALICE", //Ge3
-      "SUNY_CINDY"  //Ge5
+      "SUNY_CINDY",  //Ge5
+      "Handai60",  //GeR
+      "Handai60"    //GeL
       
     };
 
     G4double AngleHPGe[nObj]={
+      -135* deg,
+      180 * deg,
+      135 * deg,
        45 * deg,
-      -45 * deg
+      -45 * deg,
+        0 * deg,
+      180 * deg
     };
 
     G4double distanceHPGe[nObj]={
+      88.0 * mm,
+      131.0 * mm,  //Ge1(LEPS)だけ他より遠い (66+65)
+      73.5 * mm,
       78.5 * mm,
-      78 * mm //Ge5(CINDY)は距離がわからないので暫定
+      78.0 * mm,  //Ge5(CINDY)は距離がわからないので暫定
+      44.8 * mm, //磁石の図面から計算
+      44.8 * mm   //磁石の図面から計算
 
     };
 
@@ -222,7 +236,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         vecHPGe[i].rotateZ( AngleHPGe[i] );
       }
       else{
-        rotHPGe[i].rotateX( AngleHPGe[i] );
+        rotHPGe[i].rotateY( AngleHPGe[i] );
         vecHPGe[i] = G4ThreeVector(0,0,distanceHPGe[i]);
         vecHPGe[i].rotateY( AngleHPGe[i] );
       }
@@ -247,6 +261,7 @@ void DetectorConstruction::ConstructSDandField()
     fLig->GetScintiVolume()->SetSensitiveDetector(sensDet);
   }
   
+  /*
   if( Mode["Uroko"].Enable && fUroko ) {
     fUroko->GetScintiVolume()->SetSensitiveDetector(sensDet);
   }
@@ -255,4 +270,5 @@ void DetectorConstruction::ConstructSDandField()
     fHile->GetScintiVolume()->SetSensitiveDetector(sensDet);
     fHile->GetCathodeVolume()->SetSensitiveDetector(sensDet);
   }
+    */
 }
