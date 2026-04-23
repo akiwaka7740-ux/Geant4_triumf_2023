@@ -9,6 +9,7 @@ class G4LogicalVolume;
 class LigLogVol;
 class UrokoLogVol;
 class HILELogVol;
+class HPGeLogVol;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -26,6 +27,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     LigLogVol* fLig;
     UrokoLogVol* fUroko;
     HILELogVol* fHile;
+    HPGeLogVol* fHPGe;
 
     G4LogicalVolume* World_LogVol;
 };
