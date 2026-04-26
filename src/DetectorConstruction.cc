@@ -3,6 +3,7 @@
 #include "LogVol/UrokoLogVol.hh"
 #include "LogVol/HILELogVol.hh"
 #include "LogVol/HPGeLogVol.hh"
+#include "LogVol/MagnetLogVol.hh"
 
 #include "G4RunManager.hh"
 #include "G4NistManager.hh"
@@ -22,10 +23,11 @@
 struct EnableAndID { G4bool Enable; G4int ID, nObj; };
 std::map<G4String, EnableAndID> Mode = {
 //  NAME         ENABLE   ID0   nObj
-  {"LigGlass",  { true,    1,    1 } },
-  {"Uroko",     { true,   10,    4 } },
-  {"HILE",      { true,   20,    6 } },
-  {"HPGe",      { true,   30,    7 } }
+  {"LigGlass",  { false,    1,    1 } },
+  {"Uroko",     { false,   10,    4 } },
+  {"HILE",      { false,   20,    6 } },
+  {"HPGe",      { false,   30,    7 } },
+  {"Magnet",     { true,   40,    1 } },
 };
 
 namespace {
@@ -249,8 +251,21 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   }
 
 
+  objName = "Magnet";
+  if( Mode[objName].Enable ) {
+    MagnetLogVol* fMagnet = new MagnetLogVol(objName, 0, checkOverlaps);
+    G4LogicalVolume* Mag_LogVol = fMagnet->GetLogicalVolume();
+
+    //そのまま配置すればOK
+    new G4PVPlacement(0, G4ThreeVector(0,0,0), Mag_LogVol, objName+"_Phys", World_LogVol, false, Mode[objName].ID, checkOverlaps);
+
+  }
+
+
   return World_PhysVol;
+
 }
+
 
 void DetectorConstruction::ConstructSDandField()
 {
