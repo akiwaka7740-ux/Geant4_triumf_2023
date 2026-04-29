@@ -76,8 +76,10 @@ namespace HPGeGeom {
   struct GeVal { double   CryD,    CryL,    KubiD,    KubiL,  AidaL,  DewarD, DewarL, PlaD; };
   std::map<G4String, GeVal> GePar = {
     { "Handai60",    { 67.1*mm, 85.4*mm,  90.0*mm, 246.0*mm,  60*mm,  222*mm, 267*mm, 50.0*mm } }, 
+    { "Handai55",    { 63.7*mm, 87.3*mm,  83.0*mm, 416.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, //結晶サイズ以外はmanualに沿って入れた（合ってるかの確証はない）
     { "Handai50",    { 65.0*mm, 63.0*mm,  90.0*mm, 346.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, 
     { "Handai45",    { 62.0*mm, 65.0*mm,  80.0*mm, 285.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, 
+    { "Kyudai80",    { 58.0*mm, 75.0*mm,  90.0*mm, 317.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } },//結晶サイズだけわからないので、Kyudai40と同じ値を仮に入れている
     { "Kyudai40",    { 58.0*mm, 75.0*mm,  70.0*mm, 351.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, 
     { "KyudaiLEPS",  { 51.0*mm, 20.1*mm,  70.0*mm, 238.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, 
     { "Ishinomaki",  { 63.6*mm, 71.8*mm,  83.0*mm, 311.0*mm,  60*mm,  222*mm, 267*mm, 70.0*mm } }, 

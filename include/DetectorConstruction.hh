@@ -11,6 +11,11 @@ class UrokoLogVol;
 class HILELogVol;
 class HPGeLogVol;
 class MagnetLogVol;
+class FrameLogVol;
+class FloorLogVol;
+class ShieldLogVol;
+class ChamberLogVol;
+class StopperLogVol;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -30,6 +35,12 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     HILELogVol* fHile;
     HPGeLogVol* fHPGe;
     MagnetLogVol* fMagnet;
+    FrameLogVol* fFrame;
+    FloorLogVol* fFloor;
+    ShieldLogVol* fShield;
+    ChamberLogVol* fChamber;
+    StopperLogVol* fStopper;
+    
 
     G4LogicalVolume* World_LogVol;
 };

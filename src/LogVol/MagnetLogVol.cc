@@ -42,6 +42,8 @@ namespace MagnetUtil {
 
   enum class ColID {
     White,
+    LightGrey,
+    LightGray,
     Gray,
     Grey,
     Black,
@@ -58,6 +60,8 @@ namespace MagnetUtil {
   struct RGB { double R; double G; double B; };
   static std::map<ColID, RGB> defaultRGB = {
     { ColID::White,    { 1.0, 1.0, 1.0 } },
+    { ColID::LightGrey, { 0.7, 0.7, 0.7 } },
+    { ColID::LightGray, { 0.7, 0.7, 0.7 } },
     { ColID::Gray,     { 0.5, 0.5, 0.5 } },
     { ColID::Grey,     { 0.5, 0.5, 0.5 } },
     { ColID::Black,    { 0.0, 0.0, 0.0 } },
@@ -118,8 +122,8 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
   //1.2. 磁石の後半部分を定義
   const G4int numZ_Back = 4;
   G4double zPlane_Back[] = {
-      0.0*mm,  10.0*mm,   // 第1段
-      10.0*mm, 15.0*mm    // 第2段
+      0.0*mm,  15.0*mm,   // 第1段
+      15.0*mm, 25.0*mm    // 第2段
   };
 
     G4double rInner_Back[] = {
@@ -133,6 +137,55 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
     };
 
     G4VSolid* solid_Back = new G4Polycone(Name+"_Back_Solid", 0, 360*deg, numZ_Back, zPlane_Back, rInner_Back, rOuter_Back);
+
+    //1.3. ボディ0１
+    G4VSolid *tmp01 = new G4Tubs(Name+"_tmp01", 0, 122.0/2.0*mm, 30.0*mm/2.0, 0, 360*deg); // 十分大きな円柱を作成
+    G4VSolid *tmp02 = new G4Box(Name+"_tmp02", (132.0 + 145.0)/2.0*mm, 132.0/2.0*mm, 25.0*mm/2.0);
+
+    G4double tmp_xshift = (132.0 + 145.0 - 122.0)/2.0*mm;
+    G4ThreeVector translation_tmp01(tmp_xshift, 0, 0);
+
+    G4VSolid* solid_Body01 = new G4SubtractionSolid(Name+"_Body01", tmp02, tmp01, 0, translation_tmp01);
+
+    //1.4 ボディ02
+    G4double x_tmp03 = 60.0 * mm /2.0;
+    G4double x_tmp04 = 78.0 * mm /2.0;
+    G4double x_tmp05 = 140.0 * mm /2.0;
+
+    G4double y_tmp03 = 66.0 * mm /2.0;
+    G4double y_tmp04 = 132.0 * mm /2.0;
+    G4double y_tmp05 = 132.0 * mm /2.0;
+
+    G4double z_tmp03 = 30.0 * mm /2.0;
+    G4double z_tmp04 = 43.6 * mm /2.0;
+    G4double z_tmp05 = z_tmp03 + z_tmp04;
+
+
+
+    G4VSolid *tmp03 = new G4Box(Name+"_tmp03", x_tmp03, y_tmp03, z_tmp03 + 1.0*mm); // 十分大きな箱を作成 (z方向は余裕を持たせる)
+    G4VSolid *tmp04 = new G4Box(Name+"_tmp04", x_tmp04, y_tmp04, z_tmp04 + 1.0*mm);
+    G4VSolid *tmp05 = new G4Box(Name+"_tmp05", x_tmp05, y_tmp05, z_tmp05);
+    
+    G4ThreeVector translation_tmp03(0, 0, -(z_tmp05-z_tmp03));
+    G4ThreeVector translation_tmp04(0, 0, (z_tmp05-z_tmp04));
+
+    // 1. tmp05 から tmp03 を差し引く
+    G4VSolid* tmp_sub = new G4SubtractionSolid(
+        Name + "_sub1",
+        tmp05,              // 土台
+        tmp03,              // 削るもの1
+        0,                  // 回転なし
+        translation_tmp03   // tmp03の位置
+    );
+
+    // 2. 上記の結果（tmp_sub）から さらに tmp04 を差し引く
+    G4VSolid* body02 = new G4SubtractionSolid(
+        Name + "_body02",
+        tmp_sub,            // 1段目で削り終わった形状
+        tmp04,              // 削るもの2
+        0,                  // 回転なし
+        translation_tmp04   // tmp04の位置
+    );
 
 
   // =============================================================
@@ -150,6 +203,8 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
 
     G4LogicalVolume* LogVol_Mag = new G4LogicalVolume(solid_Magnet, matNeomax, Name+"_Mag_LV", 0, 0, fStepLimit);
     G4LogicalVolume* LogVol_Back = new G4LogicalVolume(solid_Back, matYoke, Name+"_Back_LV", 0, 0, fStepLimit);
+    G4LogicalVolume* LogVol_Body01 = new G4LogicalVolume(solid_Body01, matYoke, Name+"_Body01_LV", 0, 0, fStepLimit);
+    G4LogicalVolume* LogVol_Body02 = new G4LogicalVolume(body02, matYoke, Name+"_Body02_LV", 0, 0, fStepLimit);
 
   // 色を見やすく設定   
     
@@ -161,7 +216,13 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
     visBack->SetForceSolid(true);
     LogVol_Back->SetVisAttributes(visBack);
 
-    
+    G4VisAttributes* visBody01 = new G4VisAttributes(TRUE, Color(ColID::DarkGrey)); // 明るいグレー
+    visBody01->SetForceSolid(true);
+    LogVol_Body01->SetVisAttributes(visBody01);
+
+    G4VisAttributes* visBody02 = new G4VisAttributes(TRUE, Color(ColID::Blue)); // 青
+    visBody02->SetForceSolid(true);
+    LogVol_Body02->SetVisAttributes(visBody02);
 
   // =============================================================
   // 3. Physical Volume (内部配置)
@@ -172,8 +233,14 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
     double h_Mag = 45.0*mm; // 磁石の高さ
     double h_Back = 15.0*mm; // 磁石の後半部分の高さ (正確な寸法はないので仮の値)
 
+
     double z_Mag = 49.0*mm/2.0; // 磁石の前面の位置
     double z_Back = 49.0*mm/2.0 + h_Mag; // 磁石後半部分の前面の位置 (磁石の前面から積み重ねる形で配置)
+
+    double x_Body01 = - (132.0 + 145.0 - 122.0)/2.0*mm; // Body01のX方向の位置 (tmp_xshiftと同じ値)
+    double z_Body01 = 49.0*mm/2.0 + h_Mag + 25.0*mm/2.0; // Body01のZ方向の位置 (磁石の前面から積み重ねる形で配置)
+
+    double x_Body02 = -(132.0*mm/2.0 + 70.4*mm + (43.6 + 30.0)/2.0); // Body02のZ方向の位置 (Body01の前面から積み重ねる形で配置)
 
     
 
@@ -181,17 +248,28 @@ MagnetLogVol::MagnetLogVol(G4String Name, G4UserLimits* fStepLimit, G4bool check
 
     G4Transform3D trans_Magnet01 = Move(0, 0, z_Mag);
     G4Transform3D trans_Back01 = Move(0, 0, z_Back);
+    G4Transform3D trans_Body01_01 = Move(x_Body01, 0, z_Body01);
 
     // 磁石を反転させて配置 
     G4Transform3D trans_Magnet02 = Move(0, 0, -z_Mag) * Rotate(Axis::Y, 180*deg); 
     G4Transform3D trans_Back02 = Move(0, 0, -z_Back) * Rotate(Axis::Y, 180*deg);
+    G4Transform3D trans_Body01_02 = Move(x_Body01, 0, -z_Body01) ;
+
+    G4Transform3D trans_Body02 = Move(x_Body02, 0, 0)  * Rotate(Axis::Y, 90*deg);
 
 
+    
     new G4PVPlacement(trans_Magnet01, LogVol_Mag,"_Mag_01", LogVol, false, 0, checkOverlaps);
     new G4PVPlacement(trans_Back01, LogVol_Back,"_Back_01", LogVol, false, 0, checkOverlaps);
+    new G4PVPlacement(trans_Body01_01, LogVol_Body01,"_Body01_01", LogVol, false, 0, checkOverlaps);
 
     new G4PVPlacement(trans_Magnet02, LogVol_Mag,"_Mag_02", LogVol, false, 0, checkOverlaps);
     new G4PVPlacement(trans_Back02, LogVol_Back,"_Back_02", LogVol, false, 0, checkOverlaps);   
+    new G4PVPlacement(trans_Body01_02, LogVol_Body01,"_Body01_02", LogVol, false, 0, checkOverlaps);
+    
+
+    //new G4PVPlacement(trans_Body02, LogVol_Body02,"_Body02", LogVol, false, 0, checkOverlaps);  
+
 
 
 }

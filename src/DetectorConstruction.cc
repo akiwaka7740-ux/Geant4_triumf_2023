@@ -4,6 +4,13 @@
 #include "LogVol/HILELogVol.hh"
 #include "LogVol/HPGeLogVol.hh"
 #include "LogVol/MagnetLogVol.hh"
+#include "LogVol/FrameLogVol.hh"
+#include "LogVol/FloorLogVol.hh"
+#include "LogVol/ShieldLogVol.hh"
+#include "LogVol/ChamberLogVol.hh"
+#include "LogVol/StopperLogVol.hh"
+
+
 
 #include "G4RunManager.hh"
 #include "G4NistManager.hh"
@@ -23,11 +30,16 @@
 struct EnableAndID { G4bool Enable; G4int ID, nObj; };
 std::map<G4String, EnableAndID> Mode = {
 //  NAME         ENABLE   ID0   nObj
-  {"LigGlass",  { false,    1,    1 } },
-  {"Uroko",     { false,   10,    4 } },
-  {"HILE",      { false,   20,    6 } },
-  {"HPGe",      { false,   30,    7 } },
-  {"Magnet",     { true,   40,    1 } },
+  {"LigGlass",  { true,    1,    1 } },
+  {"Uroko",     { true,   10,    4 } },
+  {"HILE",      { true,   20,    6 } },
+  {"HPGe",      { true,   30,    7 } },
+  {"Magnet",     { false,   40,    1 } },
+  { "Frame",     { true,   50,    1 } },
+  { "Floor",     { true,   60,    1 } },
+  { "Shield",    { true,   70,    6} },
+  { "Chamber",   { true,   80,    1 } },
+  { "Stopper",   { true,   90,    1 } },
 };
 
 namespace {
@@ -43,13 +55,17 @@ namespace {
 
 DetectorConstruction::DetectorConstruction()
 : G4VUserDetectorConstruction(), fLig(nullptr), fUroko(nullptr), fHile(nullptr), World_LogVol(nullptr)
-{}
+{
+}
 
 DetectorConstruction::~DetectorConstruction()
 {}
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
+
+
+
   G4bool checkOverlaps = true;
   G4NistManager* nist = G4NistManager::Instance();
   G4Material* matAir = nist->FindOrBuildMaterial("G4_AIR");
@@ -192,9 +208,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     const int nObj = Mode[objName].nObj;
 
     G4String GeName[nObj]={
-      "Handai50",   //Ge0 (実際は55%)
+      "Handai55",   //Ge0 (実際は55%)
       "SUNY_LEPS",  //Ge1
-      "Handai60",   //Ge2 (実際はKyudai80%)
+      "Kyudai80",   //Ge2 (実際はKyudai80%)
       "SUNY_ALICE", //Ge3
       "SUNY_CINDY",  //Ge5
       "Handai60",  //GeR
@@ -259,6 +275,79 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     //そのまま配置すればOK
     new G4PVPlacement(0, G4ThreeVector(0,0,0), Mag_LogVol, objName+"_Phys", World_LogVol, false, Mode[objName].ID, checkOverlaps);
 
+  }
+
+  ///////////////
+  //// Frame ////
+  objName = "Frame";
+  if( Mode[objName].Enable ){
+    FrameLogVol* fFrame = new FrameLogVol(objName, 0, checkOverlaps);
+    G4LogicalVolume* Frame_LogVol = fFrame->GetLogicalVolume();
+    G4Transform3D transform_Frame = Rotate(Axis::Y, -270*deg) ;
+    new G4PVPlacement( transform_Frame, objName, Frame_LogVol, World_PhysVol, false, Mode[objName].ID, checkOverlaps);
+  }
+
+
+  ///////////////
+  //// Shield ////
+
+    objName = "Shield";
+  if( Mode[objName].Enable ){
+    const int nObj = Mode[objName].nObj;
+    G4double Angle[nObj] = {
+      -135*degree, -90*degree, -45*degree,
+       45*degree,  90*degree, 135*degree
+    };
+    G4RotationMatrix rotShield[nObj];
+    G4ThreeVector    vecShield[nObj];
+    for(int i=0;i<Mode[objName].nObj;i++){
+      rotShield[i].rotateX( Angle[i] );
+      rotShield[i].rotateY( 90*degree );
+      vecShield[i] = G4ThreeVector(0, 0, (i==1||i==4)?120*mm:105*mm);
+      vecShield[i].rotateX( Angle[i] );
+      vecShield[i].rotateY( 90*degree );
+    }
+    ShieldLogVol* fShield = new ShieldLogVol(objName, 0, checkOverlaps);
+    G4LogicalVolume* Shield_LogVol;
+    for(int i=0;i<nObj; i++){
+      Shield_LogVol = fShield->GetLogicalVolume( (i==0)?1:(i==5)?2:0 );
+      G4String objNamei = objName + std::to_string(i);
+      new G4PVPlacement( G4Transform3D( rotShield[i], vecShield[i] ),
+          objNamei, Shield_LogVol, World_PhysVol, false, Mode[objName].ID+i, checkOverlaps);
+    }
+  }
+
+  ///////////////
+  //// Floor ////
+  objName = "Floor";
+  if( Mode[objName].Enable ){
+    G4double height    = 1.7*m;
+    G4double thickness = 1.0*m;
+    FloorLogVol* fFloor = new FloorLogVol(objName, 0, checkOverlaps, world_size, thickness, world_size);
+    G4LogicalVolume* Floor_LogVol = fFloor->GetLogicalVolume();
+    new G4PVPlacement( G4Transform3D( G4RotationMatrix(), G4ThreeVector( 0, -(height+0.5*thickness), 0)), 
+                       objName, Floor_LogVol, World_PhysVol, false, Mode[objName].ID, checkOverlaps);
+  }
+
+  /////////////////
+  //// Chamber ////
+  objName = "Chamber";
+  if( Mode[objName].Enable ){
+    ChamberLogVol* fChamber = new ChamberLogVol(objName, 0, checkOverlaps);
+    G4LogicalVolume* Chamber_LogVol = fChamber->GetLogicalVolume();
+    G4Transform3D transform_Chamber = Rotate(Axis::Y, 90*deg) ;
+    new G4PVPlacement( transform_Chamber, objName, Chamber_LogVol, World_PhysVol, false, Mode[objName].ID, checkOverlaps);
+  }
+
+
+  /////////////////
+  //// Stopper ////
+  objName = "Stopper";
+  if( Mode[objName].Enable ){
+    StopperLogVol* fStopper = new StopperLogVol(objName, 0, checkOverlaps);
+    G4LogicalVolume* Stopper_LogVol = fStopper->GetLogicalVolume();
+    // 既に斜め45度に配置
+    new G4PVPlacement( G4Transform3D(), objName, Stopper_LogVol, World_PhysVol, false, Mode[objName].ID, checkOverlaps);
   }
 
 
